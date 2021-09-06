@@ -40,6 +40,14 @@ app.post('/api/stuff', (req, res, next) => {
         .catch(error => res.status(400).json({error}))
 })
 
+// Middleware qui modifie notre objet et met à jour dans notre base de données
+app.put('/api/stuff/:id', (req, res, next) => {
+    // On récupère le paramètre et nous mettons à jour les nouvelles données de notre objet en précisant que l'id de la base de données est celui de l'objet 
+    Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
+        .then(() => res.status(200).json({message: 'L\'object a bien été modifié.'}))
+        .catch(error => res.status(400).json({error}))
+})
+
 // Middleware qui récupère un objet spécifique pour l'afficher
 app.get('/api/stuff/:id', (req, res, next) => {
     // On récupère le paramètre et nous le cherchons dans la base de données
