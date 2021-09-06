@@ -1,12 +1,14 @@
 // Notre model d'objet Thing
 const Thing = require('../models/Thing')
+const fs = require('fs')
 
 exports.createThing = (req, res, next) => {
-    delete req.body._id
+    const thingObject = JSON.parse(req.body.thing)
+    delete thingObject._id
 
     const thing = new Thing({
-        // Raccourci de : title: req.body.title
-        ...req.body
+        ...thingObject,
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     })
 
     thing.save()
@@ -15,17 +17,27 @@ exports.createThing = (req, res, next) => {
 }
 
 exports.modifyThing = (req, res, next) => {
-    // On récupère le paramètre et nous mettons à jour les nouvelles données de notre objet en précisant que l'id de la base de données est celui de l'objet 
-    Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
+    const thingObject = req.file ?
+    {
+        ...JSON.parse(req.body.thing),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    } : { ...req.body }
+    Thing.updateOne({ _id: req.params.id }, { ...thingObject, _id: req.params.id })
         .then(() => res.status(200).json({message: 'L\'object a bien été modifié.'}))
         .catch(error => res.status(400).json({error}))
 }
 
 exports.deleteThing = (req, res, next) => {
-    // On récupère le paramètre et nous supprimons l'objet par rrouterort à son id
-    Thing.deleteOne({ _id: req.params.id })
-        .then(() => res.status(200).json({message: 'L\'object a bien été supprimé.'}))
-        .catch(error => res.status(400).json({error}))
+    Thing.findOne({ _id: req.params.id })
+        .then(thing => {
+            const filename = thing.imageUrl.split('/images/')[1]
+            fs.unlink(`images/${filename}`, () => {
+                Thing.deleteOne({ _id: req.params.id })
+                .then(() => res.status(200).json({message: 'L\'object a bien été supprimé.'}))
+                .catch(error => res.status(400).json({error}))
+            })
+        })
+        .catch(error => res.status(500).json({error}))
 }
 
 exports.getOneThing = (req, res, next) => {
