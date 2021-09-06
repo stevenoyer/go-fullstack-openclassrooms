@@ -27,7 +27,6 @@ app.use(bodyParser.json())
 
 // Middleware qui post et stock nos nouveaux objets depuis le formulaire dans la base de données
 app.post('/api/stuff', (req, res, next) => {
-
     delete req.body._id
 
     const thing = new Thing({
@@ -40,7 +39,15 @@ app.post('/api/stuff', (req, res, next) => {
         .catch(error => res.status(400).json({error}))
 })
 
-// Middleware qui modifie notre objet et met à jour dans notre base de données
+// Middleware qui modifie notre objet et met à jour dans notre base de données par rapport à son id
+app.delete('/api/stuff/:id', (req, res, next) => {
+    // On récupère le paramètre et nous supprimons l'objet par rapport à son id
+    Thing.deleteOne({ _id: req.params.id })
+        .then(() => res.status(200).json({message: 'L\'object a bien été supprimé.'}))
+        .catch(error => res.status(400).json({error}))
+})
+
+// Middleware qui supprime un objet par rapport à son id dans la base de données
 app.put('/api/stuff/:id', (req, res, next) => {
     // On récupère le paramètre et nous mettons à jour les nouvelles données de notre objet en précisant que l'id de la base de données est celui de l'objet 
     Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
@@ -48,7 +55,7 @@ app.put('/api/stuff/:id', (req, res, next) => {
         .catch(error => res.status(400).json({error}))
 })
 
-// Middleware qui récupère un objet spécifique pour l'afficher
+// Middleware qui récupère un objet par rapport à son id spécifique pour l'afficher
 app.get('/api/stuff/:id', (req, res, next) => {
     // On récupère le paramètre et nous le cherchons dans la base de données
     Thing.findOne({ _id: req.params.id })
